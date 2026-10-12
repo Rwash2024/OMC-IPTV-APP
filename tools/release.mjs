@@ -61,6 +61,10 @@ function apk() {
   const tag = `apk-${nativeVersion}`;
   console.log(`Publishing ${tag} on GitHub...`);
   run('gh', ['release', 'create', tag, file, '--repo', REPO, '--title', `App ${nativeVersion}`, '--notes', `Android app ${nativeVersion}.`]);
+  // The download page always links to the same address, so keep one "apk-latest" release with the newest file.
+  try { execFileSync('gh', ['release', 'view', 'apk-latest', '--repo', REPO], { stdio: 'ignore', shell: process.platform === 'win32' }); }
+  catch { run('gh', ['release', 'create', 'apk-latest', '--repo', REPO, '--title', 'Latest app', '--notes', 'Always the newest Android app. Linked from the download page.']); }
+  run('gh', ['release', 'upload', 'apk-latest', file, '--repo', REPO, '--clobber']);
   print({
     'Latest APK version (آخر نسخة APK)': nativeVersion,
     'APK link (رابط تحميل التطبيق)': `https://github.com/${REPO}/releases/download/${tag}/OMC-IPTV.apk`,

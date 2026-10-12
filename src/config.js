@@ -17,7 +17,7 @@ export const DEFAULT_CONFIG = {
   notice: null,               // { id, title, body, level: 'info' | 'warning' } shown on Home until dismissed
   // Default contact details, used until the server sends its own. International format for WhatsApp (Egypt +20, no leading 0).
   support: { whatsapp: '+201022097217', phone: '', email: 'mohamed.adel.rwash@gmail.com', telegram: '' },
-  links: { privacy: '', terms: '' },
+  links: { privacy: 'https://rwash2024.github.io/OMC-IPTV-APP/privacy/', terms: 'https://rwash2024.github.io/OMC-IPTV-APP/terms/' },
   features: { live: true, movies: true, series: true, parental: true, externalPlayer: true },
   graceDays: 7,               // how long an activated or trial device may run without reaching the server
   texts: {},                  // optional overrides, e.g. { activationHelp: '...' }
