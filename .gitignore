@@ -1,0 +1,35 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+*.apk
+*.log
+
+# Android build output and machine-specific files
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+
+# Early design previews (old name)
+nova-*.html
+.claude/
+
+# Signing keys and their passwords: never commit these
+*.jks
+*.keystore
+android/keystore.properties
+keys/

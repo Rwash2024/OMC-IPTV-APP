@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OMC</string>
+    <string name="title_activity_main">OMC</string>
+    <string name="package_name">com.omc.iptv</string>
+    <string name="custom_url_scheme">com.omc.iptv</string>
+</resources>
