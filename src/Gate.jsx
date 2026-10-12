@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { LogoTile } from './Logo.jsx';
 import { useI18n } from './i18n.jsx';
+import UpdateButton from './UpdateButton.jsx';
 import { CopyButton, SupportLinks, WhatsAppButton } from './Support.jsx';
 
 // Full-screen blockers shown before the app: update required, maintenance, no connection, activation.
@@ -26,7 +27,7 @@ export function UpdateGate({ config }) {
     <Shell>
       <h1 className="gate-title">{t('updateRequired')}</h1>
       <p className="gate-text">{t('updateRequiredText')}</p>
-      {config.updateUrl ? <a className="cta gate-btn" href={config.updateUrl} target="_blank" rel="noreferrer">{t('downloadUpdate')}</a> : null}
+      <UpdateButton config={config} className="cta gate-btn" label={t('updateNow')} />
       <SupportLinks config={config} deviceId="" />
     </Shell>
   );

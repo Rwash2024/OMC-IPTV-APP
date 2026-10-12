@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useI18n } from './i18n.jsx';
+import { isTV } from './platform.js';
 
 export async function copyText(text) {
   try {
@@ -34,6 +35,8 @@ export function WhatsAppButton({ config, deviceId, label }) {
   const { t } = useI18n();
   const number = String((config.support || {}).whatsapp || '').replace(/\D/g, '');
   if (!number) return null;
+  // A TV has no browser or WhatsApp, so show the number to message from a phone.
+  if (isTV) return <div className="wa-btn tv-number"><span>{label}</span><b className="ltr">+{number}</b></div>;
   const href = `https://wa.me/${number}?text=${encodeURIComponent(`${t('supportMsg')} ${deviceId}`)}`;
   return <a className="wa-btn f" href={href} target="_blank" rel="noreferrer">{label}</a>;
 }
@@ -48,6 +51,7 @@ export function SupportLinks({ config, deviceId }) {
   if (s.phone) links.push(['phone', s.phone, `tel:${s.phone}`]);
   if (s.email) links.push(['email', s.email, `mailto:${s.email}`]);
   if (!links.length) return null;
+  if (isTV) return <div className="support tv-support">{links.map(([k, label, href]) => <span key={k} className="ltr">{k === 'whatsapp' ? '+' + String(s.whatsapp).replace(/\D/g, '') : label}</span>)}</div>;
   return (
     <div className="support">
       {links.map(([k, label, href]) => (

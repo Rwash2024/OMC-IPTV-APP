@@ -11,6 +11,7 @@ import { useLicense } from './license.jsx';
 import Login from './Login.jsx';
 import Intro, { getIntroSound, useIntro } from './Intro.jsx';
 import { getOrientation, immersive } from './immersive.js';
+import { TV_BACK_KEYS } from './tv.js';
 import { ActivationGate, MaintenanceGate, OfflineGate, UpdateGate } from './Gate.jsx';
 import Player from './Player.jsx';
 import Detail from './Detail.jsx';
@@ -50,16 +51,20 @@ function Main() {
   const backState = useRef({});
   backState.current = { play, detail, tab, adding, setPlay, setDetail, setTab, setAdding };
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return undefined;
-    const sub = NativeApp.addListener('backButton', () => {
+    const goBack = () => {
       const s = backState.current;
       if (s.play) s.setPlay(null);
       else if (s.detail) s.setDetail(null);
       else if (s.adding) s.setAdding(false);
       else if (s.tab !== 'home') s.setTab('home');
-      else NativeApp.exitApp();
-    });
-    return () => { sub.then((h) => h.remove()); };
+      else if (Capacitor.isNativePlatform()) NativeApp.exitApp();
+      else if (window.tizen && window.tizen.application) window.tizen.application.getCurrentApplication().exit(); // Samsung TV
+    };
+    const sub = Capacitor.isNativePlatform() ? NativeApp.addListener('backButton', goBack) : null;
+    // The Back key on Samsung and LG remotes arrives as a key press.
+    const onKey = (e) => { if (TV_BACK_KEYS.has(e.keyCode)) { e.preventDefault(); goBack(); } };
+    window.addEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); if (sub) sub.then((h) => h.remove()); };
   }, []);
 
   const playLive = useCallback((list, ch) => setPlay({ kind: 'live', list, index: Math.max(0, list.indexOf(ch)) }), []);

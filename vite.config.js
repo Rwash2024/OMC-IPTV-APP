@@ -73,9 +73,42 @@ function xtreamProxy() {
   };
 }
 
+/*
+ * Smart TV build (npm run build:tv, mode "tv"). Samsung and LG TVs open the app from a file:// address, and their older
+ * browsers need: relative file paths, a classic (non-module) script, and older JavaScript syntax.
+ * TV_TARGET=tizen adds Samsung's webapis script, which gives access to the TV's MAC address and remote keys.
+ */
+function tvHtml(target) {
+  return {
+    name: 'omc-tv-html',
+    enforce: 'post',
+    transformIndexHtml(html) {
+      let out = html
+        .replace(/<script type="module" crossorigin src=/g, '<script defer src=')
+        .replace(/ crossorigin(?=[ >])/g, '');
+      // "$WEBAPIS" is a literal placeholder that the Samsung TV replaces; it is not a variable here.
+      if (target === 'tizen') out = out.replace('<head>', () => '<head>\n    <script src="$WEBAPIS/webapis/webapis.js"></script>');
+      return out;
+    },
+  };
+}
+
 // The Android project holds a synced copy of the web build; watching it crashes the dev server on Windows.
-export default defineConfig({
-  plugins: [react(), xtreamProxy()],
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  server: { watch: { ignored: ['**/android/**', '**/dist/**'] } },
+export default defineConfig(({ mode }) => {
+  const tv = mode === 'tv';
+  return {
+    base: tv ? './' : '/',
+    plugins: [react(), xtreamProxy(), ...(tv ? [tvHtml(process.env.TV_TARGET)] : [])],
+    define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+    server: { watch: { ignored: ['**/android/**', '**/dist/**', '**/dist-tv/**'] } },
+    build: tv
+      ? {
+          outDir: 'dist-tv',
+          target: 'es2015',
+          cssCodeSplit: false,
+          modulePreload: false,
+          rollupOptions: { output: { format: 'iife', inlineDynamicImports: true } },
+        }
+      : {},
+  };
 });

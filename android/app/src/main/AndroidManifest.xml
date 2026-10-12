@@ -41,6 +41,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the in-app updater open Android's installer. Remove this line for a Google Play release. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Lets the same APK install on Android TV and boxes without a touchscreen -->
     <uses-feature android:name="android.software.leanback" android:required="false" />

@@ -4,6 +4,7 @@ import { useLoad } from './useLoad.js';
 import { library, favKey, useLibrary } from './library.js';
 import { isAdultCategory, useParental } from './parental.js';
 import { readJSON, writeJSON } from './store.js';
+import UpdateButton from './UpdateButton.jsx';
 import { Banner, Chips, ChannelRow, Poster, SearchBox, State } from './ui.jsx';
 
 const STEP = 60;
@@ -70,7 +71,7 @@ export function Home({ api, goTab, playLive, playEntry, openItem, remote, licens
         <Banner level={notice.level} title={notice.title} onClose={() => { writeJSON('dismissedNotice', notice.id); setDismissed(notice.id); }}>{notice.body}</Banner>
       )}
       {updateAvailable && config.updateUrl && (
-        <Banner level="info" title={t('updateAvailable')} action={<a className="btn f" href={config.updateUrl} target="_blank" rel="noreferrer">{t('downloadUpdate')}</a>} />
+        <Banner level="info" title={t('updateAvailable')} action={<UpdateButton config={config} className="btn f" />} />
       )}
       {trialSoon && <Banner level="warning" title={t('trialLeft').replace('{n}', license.daysLeft)}>{t('trialHint')}</Banner>}
 

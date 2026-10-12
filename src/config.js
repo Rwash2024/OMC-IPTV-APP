@@ -11,6 +11,8 @@ export const DEFAULT_CONFIG = {
   minVersion: '0.0.0',        // older apps are blocked with an "update required" screen
   latestVersion: APP_VERSION, // newer than the installed app = soft "update available" notice
   updateUrl: '',              // where the APK can be downloaded
+  apkSha256: '',              // optional checksum of that APK
+  ota: null,                  // { version, url, sha256, minNative }: web part update, see ota.js
   maintenance: { on: false, message: '' },
   notice: null,               // { id, title, body, level: 'info' | 'warning' } shown on Home until dismissed
   // Default contact details, used until the server sends its own. International format for WhatsApp (Egypt +20, no leading 0).

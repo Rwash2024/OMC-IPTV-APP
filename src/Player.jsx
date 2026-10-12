@@ -7,6 +7,7 @@ import { useI18n } from './i18n.jsx';
 import { favKey, library, useLibrary } from './library.js';
 import { BUFFER_SECONDS, usePrefs } from './prefs.js';
 import { toEntry } from './Pages.jsx';
+import { KEY } from './tv.js';
 
 const fmt = (s) => {
   s = Math.max(0, Math.floor(s || 0));
@@ -191,15 +192,34 @@ export default function Player({ api, play, features, onZap, onNext, onClose }) 
     const onKey = (e) => {
       wake();
       const onRange = e.target && e.target.type === 'range';
+      const code = e.keyCode;
       if (e.key === 'Escape') { if (panel) return setPanel(false); return onClose(); }
+      // TV remote media keys.
+      if (code === KEY.PLAY) { const v = ref.current; if (v) v.play().catch(() => {}); return; }
+      if (code === KEY.PAUSE) { const v = ref.current; if (v) v.pause(); return; }
+      if (code === KEY.PLAY_PAUSE) return toggle();
+      if (code === KEY.STOP) return onClose();
+      if (code === KEY.FF) return seekBy(30);
+      if (code === KEY.REW) return seekBy(-10);
+      if (code === KEY.INFO || code === KEY.YELLOW) { const b = shell.current && shell.current.querySelector('.controls .big'); if (b) b.focus(); return; }
       if (e.key === ' ' && e.target.tagName !== 'BUTTON') { e.preventDefault(); return toggle(); }
       if (e.key === 'f') return full();
+      // OK on the picture itself: pause or resume, and put the focus on the controls so the arrows can reach them.
+      if (e.key === 'Enter' && !(e.target.closest && e.target.closest('button, input, a'))) {
+        toggle();
+        const b = shell.current && shell.current.querySelector('.controls .big');
+        if (b) b.focus();
+        return;
+      }
+      // While a control is focused the arrow keys move between controls instead of seeking or changing channel.
+      const onControls = e.target.closest && e.target.closest('.p-bottom, .p-top, .track-panel');
+      if (onControls && !onRange) return;
       if (live) {
         if (e.key === 'PageUp' || e.key === 'ChannelUp' || (!onRange && e.key === 'ArrowUp')) { e.preventDefault(); return zap(-1); }
         if (e.key === 'PageDown' || e.key === 'ChannelDown' || (!onRange && e.key === 'ArrowDown')) { e.preventDefault(); return zap(1); }
       } else if (!onRange) {
-        if (e.key === 'ArrowRight') return seekBy(10);
-        if (e.key === 'ArrowLeft') return seekBy(-10);
+        if (e.key === 'ArrowRight') { e.preventDefault(); return seekBy(10); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); return seekBy(-10); }
       }
     };
     window.addEventListener('keydown', onKey);

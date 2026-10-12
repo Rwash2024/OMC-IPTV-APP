@@ -9,6 +9,8 @@ import { usePrefs } from './prefs.js';
 import { useLoad } from './useLoad.js';
 import PinDialog from './PinDialog.jsx';
 import { CopyButton, SupportLinks } from './Support.jsx';
+import UpdateButton from './UpdateButton.jsx';
+import { checkForOta } from './ota.js';
 
 function Section({ title, children }) {
   return (
@@ -47,6 +49,16 @@ export default function Settings({ api, accounts, activeId, onSwitch, onAdd, onD
   const [confirmDel, setConfirmDel] = useState('');
   const [cacheMsg, setCacheMsg] = useState(false);
   const { config, updateAvailable } = remote;
+  const [checking, setChecking] = useState(false);
+  const [otaMsg, setOtaMsg] = useState('');
+  // Fetches the latest settings from the server, and applies a newer web version straight away if there is one.
+  const checkNow = async () => {
+    setChecking(true); setOtaMsg('');
+    await remote.refresh();
+    const res = await checkForOta(config.ota, remote.nativeVersion, { apply: true });
+    setChecking(false);
+    setOtaMsg(res === 'current' || res === 'none' ? t('upToDate') : res === 'needs-apk' ? t('needsApk') : res === 'failed' ? t('updateFailed') : '');
+  };
   const license = lic.license || {};
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
@@ -136,10 +148,11 @@ export default function Settings({ api, accounts, activeId, onSwitch, onAdd, onD
 
       <Section title={t('about')}>
         <dl className="kv">
-          <dt>{t('version')}</dt><dd className="ltr">{APP_VERSION}</dd>
+          <dt>{t('version')}</dt><dd className="ltr">{remote.nativeVersion} <small className="muted">(UI {APP_VERSION})</small></dd>
         </dl>
-        {updateAvailable && config.updateUrl && <a className="btn primary f" href={config.updateUrl} target="_blank" rel="noreferrer">{t('updateAvailable')} · {t('downloadUpdate')}</a>}
-        <button className="btn f" onClick={remote.refresh}>{t('checkUpdate')}</button>
+        {updateAvailable && <UpdateButton config={config} label={`${t('updateAvailable')} · ${t('updateNow')}`} />}
+        {otaMsg && <p className="note">{otaMsg}</p>}
+        <button className="btn f" onClick={checkNow} disabled={checking}>{checking ? t('loading') : t('checkUpdate')}</button>
         <SupportLinks config={config} deviceId={lic.deviceId} />
         <div className="row-actions">
           {config.links.privacy && <a className="link-text f" href={config.links.privacy} target="_blank" rel="noreferrer">{t('privacy')}</a>}

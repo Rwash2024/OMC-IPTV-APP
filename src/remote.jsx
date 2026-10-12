@@ -3,6 +3,7 @@ import { API_BASE, API_KEY, APP_VERSION, DEFAULT_CONFIG, cmpVersion } from './co
 import { readJSON, writeJSON } from './store.js';
 import { route } from './xtream.js';
 import { Capacitor } from '@capacitor/core';
+import { checkForOta, getNativeVersion } from './ota.js';
 
 const KEY = 'remoteConfig';
 const merge = (base, over) => {
@@ -31,6 +32,8 @@ const Ctx = createContext(null);
 // Loads the config from the server and keeps the last good copy, so the app still behaves the same offline.
 export function RemoteProvider({ children }) {
   const [config, setConfig] = useState(() => merge(DEFAULT_CONFIG, readJSON(KEY, null)));
+  const [nativeVersion, setNativeVersion] = useState(APP_VERSION);
+  const [otaState, setOtaState] = useState('none');
 
   const refresh = useCallback(async () => {
     if (!API_BASE) return;
@@ -42,6 +45,11 @@ export function RemoteProvider({ children }) {
     } catch { /* keep the cached config */ }
   }, []);
 
+  useEffect(() => { getNativeVersion().then(setNativeVersion); }, []);
+
+  // Fetch a newer web version in the background; it is used the next time the app starts.
+  useEffect(() => { checkForOta(config.ota, nativeVersion).then(setOtaState); }, [config.ota, nativeVersion]);
+
   useEffect(() => {
     refresh();
     const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
@@ -52,9 +60,12 @@ export function RemoteProvider({ children }) {
   const value = useMemo(() => ({
     config,
     refresh,
-    mustUpdate: cmpVersion(APP_VERSION, config.minVersion) < 0,
-    updateAvailable: cmpVersion(APP_VERSION, config.latestVersion) < 0,
-  }), [config, refresh]);
+    nativeVersion,
+    otaState,
+    // minVersion / latestVersion are about the installed APK. The web part updates by itself (see ota.js).
+    mustUpdate: cmpVersion(nativeVersion, config.minVersion) < 0,
+    updateAvailable: cmpVersion(nativeVersion, config.latestVersion) < 0,
+  }), [config, refresh, nativeVersion, otaState]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

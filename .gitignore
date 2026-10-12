@@ -33,3 +33,10 @@ nova-*.html
 *.keystore
 android/keystore.properties
 keys/
+
+# Local release output
+release/
+
+# Smart TV build output
+tv/build/
+dist-tv/

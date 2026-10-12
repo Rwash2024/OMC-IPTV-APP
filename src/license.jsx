@@ -2,6 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Capacitor } from '@capacitor/core';
 import { API_BASE, APP_VERSION } from './config.js';
 import { immersive } from './immersive.js';
+import { isTV } from './platform.js';
+import { sha256 } from './sha256.js';
+import { tvDeviceId } from './tv.js';
 import { fetchJSON, useRemote } from './remote.jsx';
 import { readJSON, writeJSON } from './store.js';
 
@@ -24,10 +27,11 @@ export async function getDeviceId() {
   if (saved) return saved;
   let id = '';
   const native = Capacitor.isNativePlatform() ? await immersive.deviceId() : '';
-  if (native) {
-    const bytes = new TextEncoder().encode('omc-iptv:' + native);
-    const hash = await crypto.subtle.digest('SHA-256', bytes);
-    id = fmtId([...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join(''));
+  const tv = isTV ? await tvDeviceId() : '';
+  if (/^[0-9A-F]{12}$/i.test(tv)) {
+    id = fmtId(tv); // a Samsung TV's MAC address
+  } else if (native || tv) {
+    id = fmtId(await sha256('omc-iptv:' + (native || tv)));
   } else {
     id = fmtId([...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, '0')).join(''));
   }
