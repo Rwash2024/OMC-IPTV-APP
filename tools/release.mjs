@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO = 'Rwash2024/OMC-IPTV-APP';
-const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32', ...opts });
+const run = (cmd, args, opts = {}) => execFileSync(cmd, args, { cwd: root, stdio: 'inherit', shell: process.platform === 'win32' && (cmd === 'npm' || cmd.startsWith('"')), ...opts });
 const sha256 = (file) => createHash('sha256').update(readFileSync(file)).digest('hex');
 
 const pkgPath = path.join(root, 'package.json');
@@ -62,7 +62,7 @@ function apk() {
   console.log(`Publishing ${tag} on GitHub...`);
   run('gh', ['release', 'create', tag, file, '--repo', REPO, '--title', `App ${nativeVersion}`, '--notes', `Android app ${nativeVersion}.`]);
   // The download page always links to the same address, so keep one "apk-latest" release with the newest file.
-  try { execFileSync('gh', ['release', 'view', 'apk-latest', '--repo', REPO], { stdio: 'ignore', shell: process.platform === 'win32' }); }
+  try { execFileSync('gh', ['release', 'view', 'apk-latest', '--repo', REPO], { stdio: 'ignore' }); }
   catch { run('gh', ['release', 'create', 'apk-latest', '--repo', REPO, '--title', 'Latest app', '--notes', 'Always the newest Android app. Linked from the download page.']); }
   run('gh', ['release', 'upload', 'apk-latest', file, '--repo', REPO, '--clobber']);
   print({
