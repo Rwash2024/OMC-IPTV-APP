@@ -40,3 +40,6 @@ release/
 # Smart TV build output
 tv/build/
 dist-tv/
+
+# Local project handoff notes
+CLAUDE.md
