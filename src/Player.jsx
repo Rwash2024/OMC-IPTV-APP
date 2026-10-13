@@ -184,6 +184,63 @@ export default function Player({ api, play, features, onZap, onNext, onClose }) 
     setTimeout(readTracks, 50);
   };
 
+  // Touch gestures on the picture: swipe up/down on the left half = brightness, right half = volume,
+  // double tap on the left/right half = back/forward 10 s. A single tap still pauses (after a short wait, to tell it from a double tap).
+  const gesture = useRef(null);
+  const tap = useRef({ t: 0, side: '', timer: 0 });
+  const lastTouch = useRef(0);
+  useEffect(() => () => clearTimeout(tap.current.timer), []);
+
+  const setLevel = (kind, v) => {
+    if (kind === 'volume') { if (isNative) immersive.setVolume(v); else if (ref.current) ref.current.volume = v; }
+    else immersive.setBrightness(v);
+    say(`${kind === 'volume' ? (v === 0 ? '🔇' : '🔊') : '☀'} ${Math.round(v * 100)}%`);
+  };
+  const onTouchStartVideo = (e) => {
+    if (e.touches.length !== 1) { gesture.current = null; return; }
+    const p = e.touches[0];
+    const r = e.currentTarget.getBoundingClientRect();
+    gesture.current = { x: p.clientX, y: p.clientY, side: p.clientX < r.left + r.width / 2 ? 'left' : 'right', h: r.height, mode: '', ready: false, start: 0 };
+  };
+  const onTouchMoveVideo = (e) => {
+    const g = gesture.current; if (!g || e.touches.length !== 1) return;
+    const p = e.touches[0];
+    const dy = p.clientY - g.y, dx = p.clientX - g.x;
+    if (!g.mode) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 14) return;
+      if (Math.abs(dx) >= Math.abs(dy) || (g.side === 'left' && !isNative)) { g.mode = 'none'; return; } // brightness only exists in the Android app
+      g.mode = g.side === 'left' ? 'brightness' : 'volume';
+      g.y = p.clientY;
+      const read = g.mode === 'volume' ? (isNative ? immersive.getVolume() : Promise.resolve(ref.current ? ref.current.volume : 1)) : immersive.getBrightness();
+      read.then((v) => { g.start = v; g.ready = true; });
+      return;
+    }
+    if (g.mode === 'none' || !g.ready) return;
+    const lo = g.mode === 'brightness' ? 0.02 : 0;
+    const v = Math.max(lo, Math.min(1, g.start - (p.clientY - g.y) / (g.h * 0.7)));
+    if (g.last !== undefined && Math.abs(v - g.last) < 0.01) return;
+    g.last = v;
+    setLevel(g.mode, v);
+  };
+  const onTouchEndVideo = () => {
+    const g = gesture.current; gesture.current = null;
+    lastTouch.current = Date.now();
+    if (!g || g.mode) return; // it was a swipe, not a tap
+    const tp = tap.current;
+    if (live) { toggle(); return; }
+    const now = Date.now();
+    if (tp.timer && now - tp.t < 300 && tp.side === g.side) {
+      clearTimeout(tp.timer); tp.timer = 0;
+      seekBy(g.side === 'left' ? -10 : 10);
+      return;
+    }
+    clearTimeout(tp.timer);
+    tp.t = now; tp.side = g.side;
+    tp.timer = setTimeout(() => { tp.timer = 0; toggle(); }, 280);
+  };
+  // A touch already acted in onTouchEnd; only mouse clicks (and the TV remote's OK) arrive here.
+  const onClickVideo = () => { if (Date.now() - lastTouch.current > 700) toggle(); };
+
   const openExternal = () => immersive.openExternal(rawUrl, title).catch(() => say(t('noExternal')));
   const pip = () => immersive.enterPip().catch(() => say(t('pipUnavailable')));
 
@@ -251,7 +308,8 @@ export default function Player({ api, play, features, onZap, onNext, onClose }) 
           saveNow(true);
           if (hasNext && prefs.autoNext) onNext(play.qIndex + 1);
         }}
-        onError={() => setErr(true)} onPlaying={() => setErr(false)} onClick={toggle} />
+        onError={() => setErr(true)} onPlaying={() => setErr(false)} onClick={onClickVideo}
+        onTouchStart={onTouchStartVideo} onTouchMove={onTouchMoveVideo} onTouchEnd={onTouchEndVideo} onTouchCancel={() => { gesture.current = null; }} />
 
       <div className="p-top">
         <button className="icon-btn f" onClick={onClose} aria-label={t('back')}>‹</button>

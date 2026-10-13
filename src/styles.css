@@ -141,7 +141,7 @@ main { min-width: 0; overflow-y: auto; padding-inline: clamp(16px, 3vw, 40px); p
 
 /* ---- Player ---- */
 .player { position: fixed; inset: 0; z-index: 60; background: #000; color: #fff; display: grid; grid-template-rows: auto 1fr auto; }
-.player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; touch-action: none; }
 .player > :not(video) { position: relative; z-index: 1; }
 .p-top, .p-bottom { transition: opacity .3s; }
 .p-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) clamp(16px, 3vw, 36px) 24px; background: linear-gradient(rgba(0,0,0,.75), transparent); }

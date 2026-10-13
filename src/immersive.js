@@ -11,6 +11,10 @@ export const immersive = {
   deviceId: () => (plugin ? plugin.deviceId().then((r) => r.id).catch(() => '') : Promise.resolve('')),
   openExternal: (url, title) => (plugin ? plugin.openExternal({ url, title }) : Promise.reject(new Error('web'))),
   enterPip: () => (plugin ? plugin.enterPip() : Promise.reject(new Error('web'))),
+  getBrightness: () => (plugin ? plugin.getBrightness().then((r) => r.value).catch(() => 0.5) : Promise.resolve(0.5)),
+  setBrightness: (value) => (plugin ? plugin.setBrightness({ value }).catch(() => {}) : Promise.resolve()),
+  getVolume: () => (plugin ? plugin.getVolume().then((r) => r.value).catch(() => 0.5) : Promise.resolve(0.5)),
+  setVolume: (value) => (plugin ? plugin.setVolume({ value }).catch(() => {}) : Promise.resolve()),
   exit: () => (plugin ? plugin.exit().catch(() => {}) : Promise.resolve()),
 };
 

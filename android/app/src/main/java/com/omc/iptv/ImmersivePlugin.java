@@ -2,8 +2,10 @@ package com.omc.iptv;
 
 import android.app.Activity;
 import android.app.PictureInPictureParams;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -62,6 +64,9 @@ public class ImmersivePlugin extends Plugin {
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
             controller.show(WindowInsetsCompat.Type.systemBars());
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            WindowManager.LayoutParams lp = window.getAttributes();
+            lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+            window.setAttributes(lp);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 window.getAttributes().layoutInDisplayCutoutMode =
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
@@ -110,6 +115,54 @@ public class ImmersivePlugin extends Plugin {
         } catch (Exception e) {
             call.reject("No player app found");
         }
+    }
+
+    // Screen brightness for the swipe gesture, 0..1. Only this app's window changes; exit() gives control back to the system setting.
+    @PluginMethod
+    public void getBrightness(PluginCall call) {
+        Activity activity = getActivity();
+        activity.runOnUiThread(() -> {
+            float b = activity.getWindow().getAttributes().screenBrightness;
+            if (b < 0) {
+                try { b = Settings.System.getInt(activity.getContentResolver(), Settings.System.SCREEN_BRIGHTNESS) / 255f; }
+                catch (Exception e) { b = 0.5f; }
+            }
+            JSObject out = new JSObject();
+            out.put("value", b);
+            call.resolve(out);
+        });
+    }
+
+    @PluginMethod
+    public void setBrightness(PluginCall call) {
+        final double value = Math.max(0.02, Math.min(1, call.getDouble("value", 0.5)));
+        Activity activity = getActivity();
+        activity.runOnUiThread(() -> {
+            Window window = activity.getWindow();
+            WindowManager.LayoutParams lp = window.getAttributes();
+            lp.screenBrightness = (float) value;
+            window.setAttributes(lp);
+            call.resolve();
+        });
+    }
+
+    // Media volume for the swipe gesture, 0..1 (the same volume the phone's side buttons change).
+    @PluginMethod
+    public void getVolume(PluginCall call) {
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        int max = Math.max(1, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+        JSObject out = new JSObject();
+        out.put("value", am.getStreamVolume(AudioManager.STREAM_MUSIC) / (double) max);
+        call.resolve(out);
+    }
+
+    @PluginMethod
+    public void setVolume(PluginCall call) {
+        double value = Math.max(0, Math.min(1, call.getDouble("value", 0.5)));
+        AudioManager am = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        am.setStreamVolume(AudioManager.STREAM_MUSIC, (int) Math.round(value * max), 0);
+        call.resolve();
     }
 
     // Small floating window so the video keeps playing while the user uses another app.
